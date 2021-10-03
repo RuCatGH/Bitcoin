@@ -38,5 +38,5 @@ class Currency:
         time.sleep(3)
         self.check_currency()
 
-# call
+
 
