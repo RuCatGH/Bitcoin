@@ -1,8 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 import time
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 
 class Currency:
@@ -29,14 +27,11 @@ class Currency:
         price = float(self.get_currency())
         if price >= self.compare_currency + self.diferent:
             print("Цена биткоина выросла.")
-            self.send_mail()
         elif price <= self.compare_currency - self.diferent:
-
             print("Цена биткоина упала.")
-            self.send_mail()
+            
         print(str(price))
         time.sleep(3)
         self.check_currency()
-
-
+        
 
