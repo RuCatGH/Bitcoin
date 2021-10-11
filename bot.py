@@ -1,4 +1,5 @@
 import logging
+from os import get_terminal_size
 from typing import Text
 from aiogram import Bot, Dispatcher, executor, types
 import config
@@ -6,10 +7,12 @@ import requests
 import json
 from aiogram.dispatcher.filters import Text
 
-# Делаем запрос на получение цены биткоина
-response = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd').text
-bitcoinjson = json.loads(response)
-pricebitcoin = bitcoinjson["bitcoin"]["usd"]
+def get_bitcoin_price() -> int:
+    # Делаем запрос на получение цены биткоина
+    response = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd').text
+    bitcoinjson = json.loads(response)
+    return int(bitcoinjson["bitcoin"]["usd"])
+
 
 # Объект бота
 bot = Bot(config.token)
@@ -21,13 +24,15 @@ dp = Dispatcher(bot)
 logging.basicConfig(level=logging.INFO)
 
 # Хэндлер на команду /price
-@dp.message_handler(commands="price")
+@dp.message_handler(commands=["price"])
 async def priceb(message: types.Message):
-    await message.answer(f"Цена биткоина = {pricebitcoin}")
+    await message.answer(f"Цена биткоина = {get_bitcoin_price()}")
 
-@dp.message_handler(Text(equals = 'будильник', ignore_case = True))
+@dp.message_handler(commands=["alert"])   
 async def alarm(message: types.Message):
-    await message.answer(message.text)
+    mean = message.text[6:]
+
+        
     
 
 
