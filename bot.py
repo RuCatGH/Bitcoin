@@ -6,10 +6,7 @@ import asyncio
 import logging
 import aiohttp
 import config
-import sqlite3
 
-conn = sqlite3.connect("bd.db") 
-cursor = conn.cursor()
 
 async def get_bitcoin_price():
     # Делаем запрос на получение цены биткоина
@@ -38,8 +35,7 @@ async def priceb(message: types.Message):
 @dp.message_handler(commands=["alert"])
 async def alarm(message: types.Message):
     mean = int(message.text[6:])
-    cursor.execute(f'INSERT INTO meanb (meanfield) VALUES ({mean})')
-    conn.commit()
+    await message.reply("Цена сохранена.")
     if mean > await get_bitcoin_price():
         while True:
             await asyncio.sleep(3)
