@@ -1,17 +1,22 @@
-import logging
-from os import get_terminal_size
-from typing import Text
 from aiogram import Bot, Dispatcher, executor, types
-import config
-import requests
-import json
 from aiogram.dispatcher.filters import Text
+from requests.api import get
+from typing import Text
+import asyncio
+import logging
+import aiohttp
+import config
+import sqlite3
 
-def get_bitcoin_price() -> int:
+conn = sqlite3.connect("bd.db") 
+cursor = conn.cursor()
+
+async def get_bitcoin_price():
     # Делаем запрос на получение цены биткоина
-    response = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd').text
-    bitcoinjson = json.loads(response)
-    return int(bitcoinjson["bitcoin"]["usd"])
+    async with aiohttp.ClientSession() as session:
+        async with session.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd') as response:
+            bitcoin = await response.json()
+        return int(bitcoin["bitcoin"]["usd"])
 
 
 # Объект бота
@@ -23,17 +28,35 @@ dp = Dispatcher(bot)
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
 
+
 # Хэндлер на команду /price
 @dp.message_handler(commands=["price"])
 async def priceb(message: types.Message):
-    await message.answer(f"Цена биткоина = {get_bitcoin_price()}")
+    await message.answer(f"Цена биткоина = {await get_bitcoin_price()}")
 
-@dp.message_handler(commands=["alert"])   
+# Хэндлер на команду /alert для оповещения, когда цена дойдёт 
+@dp.message_handler(commands=["alert"])
 async def alarm(message: types.Message):
-    mean = message.text[6:]
-
-        
-    
+    mean = int(message.text[6:])
+    cursor.execute(f'INSERT INTO meanb (meanfield) VALUES ({mean})')
+    conn.commit()
+    if mean > await get_bitcoin_price():
+        while True:
+            await asyncio.sleep(3)
+            if mean < await get_bitcoin_price():
+                await message.answer(f"Цена биткоина пересекла вашу отметку {mean}")
+                break
+    if mean < await get_bitcoin_price():
+        while True:
+            await asyncio.sleep(3)
+            if mean > await get_bitcoin_price():
+                await message.answer(f"Цена биткоина пересекла вашу отметку {mean}")
+                break
+    while True:
+            await asyncio.sleep(3)
+            if mean == await get_bitcoin_price():
+                await message.answer(f"Цена биткоина пересекла вашу отметку {mean}")
+                break
 
 
 if __name__ == "__main__":
